@@ -130,32 +130,32 @@ run zongshuju
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-未来逐时干球温度预测
+% Future hourly dry-bulb temperature prediction
 function yucezhushidbt(data1,data2)
-%把原有逐时数据文件输入
- data1=load('E:\论文\预测未来逐时天气\预测未来逐时天气\BasicHourlyData.txt');
-% %把月预测变化数据文件输入
- data2=load('E:\论文\预测未来逐时天气\预测未来逐时天气\FutureMonthlyData.txt');
-%逐时干球温度:dbt0
-%逐时最大干球温度：dbtmx
-%逐时最小干球温度：dbtmi
-%逐时太阳总辐射：gsr0
-%逐时含湿量：s0
+% Load original hourly data file
+ data1=load('BasicHourlyData.txt');
+% % Load monthly forecast change data file
+ data2=load('FutureMonthlyData.txt');
+% Hourly dry-bulb temperature: dbt0
+% Hourly maximum dry-bulb temperature: dbtmx
+% Hourly minimum dry-bulb temperature: dbtmi
+% Hourly total solar radiation: gsr0
+% Hourly specific humidity: s0
 tzh=data1(:,1);
 year1=data1(:,2);
 month=data1(:,3);
 day=data1(:,4);
-dbt0=data1(:,6);%干球温度%
-gsr0=data1(:,10);%太阳总辐射%
-dif0=data1(:,11);%太阳散射
-dir0=data1(:,12);%太阳直射
+dbt0=data1(:,6);% dry-bulb temperature %
+gsr0=data1(:,10);% total solar radiation %
+dif0=data1(:,11);% diffuse solar radiation
+dir0=data1(:,12);% direct solar radiation
 % dbt0=dbt0.*0.1;
 % gsr0=gsr0*1000000/3600;
 % dif0=dif0*1000000/3600;
 % dir0=dir0*1000000/3600;
 dbt0m=[];
 gsr0m=[];
-%求出已有数据的每月均值
+% Calculate monthly means from existing data
 for k=1:1:12
     if k==1
         meanl=mean(dbt0(1:length(find(month<=k))));
@@ -167,7 +167,7 @@ for k=1:1:12
     dbt0m=[dbt0m meanl];
     gsr0m=[gsr0m mean2];
 end
-%在逐时干球温度中找出最大最小干球温度并求月均值
+% Find daily max/min dry-bulb in hourly data and compute monthly means
 mean_max=[];
 mean_min=[];
 for k=1:1:12
@@ -210,11 +210,11 @@ for k=1:1:12
         mean_min=[mean_min d];
     end
 end
-%最大干球温度月均值预测变化：TMX
-%最小干球温度月均值预测变化：TIN
-%太阳总辐射：RSDS
-%含湿量：HUSS
-%平均干球温度月均值预测值：TAS
+% Predicted change of monthly mean maximum dry-bulb temperature: TMX
+% Predicted change of monthly mean minimum dry-bulb temperature: TIN
+% Total solar radiation: RSDS
+% Specific humidity: HUSS
+% Predicted monthly mean dry-bulb temperature: TAS
 year=data2(:,1);
 month1=data2(:,2);
 TAS=data2(:,3);
@@ -228,11 +228,11 @@ F=length(dbt0);
 gsr0m=gsr0m';
 RSDS=RSDS1-gsr0m;
 for i=1:1:L
-    adbt(i)=(TMX(i)-TIN(i))/(mean_max(i)-mean_min(i));%干球温度缩放因子
-    agsr(i)=1+(RSDS(i)/gsr0m(i));                     %太阳总辐射、直射、散射缩放因子
-    tas=tas1'-dbt0m;                                  %干球月均值的变化量
+    adbt(i)=(TMX(i)-TIN(i))/(mean_max(i)-mean_min(i));% Dry-bulb temperature scaling factor
+    agsr(i)=1+(RSDS(i)/gsr0m(i));                     % Scaling factor for total/direct/diffuse solar radiation
+    tas=tas1'-dbt0m;                                  % Change in monthly mean dry-bulb temperature
 end
-%位移加伸缩进行预测逐时值生成
+% Generate predicted hourly values using shift and scale
 for j=1:24*31
     dbt(j)=dbt0(j)+tas(1)+adbt(1)*(dbt0(j)-dbt0m(1));
     gsr(j)=agsr(1)*gsr0(j);
@@ -307,7 +307,7 @@ for j=(24*(31+28+31+30+31+30+31+31+30+31+30)+1):(24*(31+28+31+30+31+30+31+31+30+
     dir(j)=agsr(12)*dir0(j);
 end
 k=1;
-%转化成24时输出
+% Convert to 24-hour output
 for i=1:1:F
     xxx(i)=k;
     k=k+1;
@@ -315,45 +315,45 @@ for i=1:1:F
         k=1;
     end
 end
-%24时，竖着输出fid是文件file的ID %6.1f 6代表小数点前有六位数，1代表小数点后有1位数，f代表自由格式输出
-% wt是write的简写
+% 24-hour, vertical output. fid is file ID. %6.1f: 6 digits before decimal, 1 digit after decimal, f = free format
+% 'wt' stands for write text
 xxx=xxx';
 dbt=dbt';
 gsr=gsr';
 dif=dif';
 dir=dir';
-fid=fopen('E:\论文\预测未来逐时天气\预测未来逐时天气\FutureHourlydbt.txt','wt');
+fid=fopen('FutureHourlydbt.txt','wt');
 for i=1:1:F
 fprintf(fid, '%3.0f %3.0f %3.0f %3.0f %3.0f %6.1f\n',tzh(i),year1(i),month(i),day(i),xxx(i),dbt(i));
 end
 fclose(fid);
 
-未来逐时辐射预测
+% Future hourly radiation prediction
 function yucezhushifushe(data1,data2)
-%把原有逐时数据文件输入
-data1=load('E:\论文\预测未来逐时天气\预测未来逐时天气\BasicHourlyData.txt');
-%把月预测变化数据文件输入
-data2=load('E:\论文\预测未来逐时天气\预测未来逐时天气\FutureMonthlyData.txt');
-%逐时干球温度:dbt0
-%逐时最大干球温度：dbtmx
-%逐时最小干球温度：dbtmi
-%逐时太阳总辐射：gsr0
-%逐时含湿量：s0
+% Load original hourly data file
+data1=load('BasicHourlyData.txt');
+% Load monthly forecast change data file
+data2=load('FutureMonthlyData.txt');
+% Hourly dry-bulb temperature: dbt0
+% Hourly maximum dry-bulb temperature: dbtmx
+% Hourly minimum dry-bulb temperature: dbtmi
+% Hourly total solar radiation: gsr0
+% Hourly specific humidity: s0
 tzh=data1(:,1);
 year1=data1(:,2);
 month=data1(:,3);
 day=data1(:,4);
-dbt0=data1(:,6);%干球温度%
-gsr0=data1(:,10);%太阳总辐射%
-dif0=data1(:,11);%太阳散射
-dir0=data1(:,12);%太阳直射
+dbt0=data1(:,6);% dry-bulb temperature %
+gsr0=data1(:,10);% total solar radiation %
+dif0=data1(:,11);% diffuse solar radiation
+dir0=data1(:,12);% direct solar radiation
 % dbt0=dbt0.*0.1;
 % gsr0=gsr0*1000000/3600;
 % dif0=dif0*1000000/3600;
 % dir0=dir0*1000000/3600;
 dbt0m=[];
 gsr0m=[];
-%求出已有数据的每月均值
+% Calculate monthly means from existing data
 for k=1:1:12
     if k==1
         meanl=mean(dbt0(1:length(find(month<=k))));
@@ -365,7 +365,7 @@ for k=1:1:12
     dbt0m=[dbt0m meanl];
     gsr0m=[gsr0m mean2];
 end
-%在逐时干球温度中找出最大最小干球温度并求月均值
+% Find daily max/min dry-bulb in hourly data and compute monthly means
 mean_max=[];
 mean_min=[];
 for k=1:1:12
@@ -408,11 +408,11 @@ for k=1:1:12
         mean_min=[mean_min d];
     end
 end
-%最大干球温度月均值预测变化：TMX
-%最小干球温度月均值预测变化：TIN
-%太阳总辐射：RSDS
-%含湿量：HUSS
-%平均干球温度月均值预测值：TAS
+% Predicted change of monthly mean maximum dry-bulb temperature: TMX
+% Predicted change of monthly mean minimum dry-bulb temperature: TIN
+% Total solar radiation: RSDS
+% Specific humidity: HUSS
+% Predicted monthly mean dry-bulb temperature: TAS
 year=data2(:,1);
 month1=data2(:,2);
 TAS=data2(:,3);
@@ -426,11 +426,11 @@ F=length(dbt0);
 gsr0m=gsr0m';
 RSDS=RSDS1-gsr0m;
 for i=1:1:L
-    adbt(i)=(TMX(i)-TIN(i))/(mean_max(i)-mean_min(i));%干球温度缩放因子
-    agsr(i)=1+(RSDS(i)/gsr0m(i));                     %太阳总辐射、直射、散射缩放因子
-    tas=tas1'-dbt0m;                                  %干球月均值的变化量
+    adbt(i)=(TMX(i)-TIN(i))/(mean_max(i)-mean_min(i));% Dry-bulb temperature scaling factor
+    agsr(i)=1+(RSDS(i)/gsr0m(i));                     % Scaling factor for total/direct/diffuse solar radiation
+    tas=tas1'-dbt0m;                                  % Change in monthly mean dry-bulb temperature
 end
-%位移加伸缩进行预测逐时值生成
+% Generate predicted hourly values using shift and scale
 for j=1:24*31
     dbt(j)=dbt0(j)+tas(1)+adbt(1)*(dbt0(j)-dbt0m(1));
     gsr(j)=agsr(1)*gsr0(j);
@@ -505,7 +505,7 @@ for j=(24*(31+28+31+30+31+30+31+31+30+31+30)+1):(24*(31+28+31+30+31+30+31+31+30+
     dir(j)=agsr(12)*dir0(j);
 end
 k=1;
-%转化成24时输出
+% Convert to 24-hour output
 for i=1:1:F
     xxx(i)=k;
     k=k+1;
@@ -513,33 +513,33 @@ for i=1:1:F
         k=1;
     end
 end
-%24时，竖着输出fid是文件file的ID %6.1f 6代表小数点前有六位数，1代表小数点后有1位数，f代表自由格式输出
-% wt是write的简写
+% 24-hour, vertical output. fid is file ID. %6.1f: 6 digits before decimal, 1 digit after decimal, f = free format
+% 'wt' stands for write text
 xxx=xxx';
 dbt=dbt';
 gsr=gsr';
 dif=dif';
 dir=dir';
-fid=fopen('E:\论文\预测未来逐时天气\预测未来逐时天气\FutureHourlygsrdifdir.txt','wt');
+fid=fopen('FutureHourlygsrdifdir.txt','wt');
 for i=1:1:F
 fprintf(fid, '%3.0f %3.0f %3.0f %3.0f %3.0f %6.1f %6.1f %6.1f\n',tzh(i),year1(i),month(i),day(i),xxx(i),gsr(i),dif(i),dir(i));
 end
 fclose(fid);
 
-此为逐时含湿量的求法
+% This computes hourly specific humidity
 function zhushihanshiliang(useless)
-useless=load('E:\论文\预测未来逐时天气\预测未来逐时天气\BasicHourlyData.txt');
+useless=load('BasicHourlyData.txt');
 t=useless(:,6);
 p=useless(:,9);
 h=useless(:,8);
-%p为大气压力，单位为0.1百Pa，应标准化为Pa
+% p is atmospheric pressure in 0.1 hPa units; should be normalized to Pa
 % p=0.1.*100.*p;
-%气温的单位为0.1摄氏度   %，标准化为国际温度单位
+% Air temperature unit is 0.1°C; normalize to Kelvin
 % t=0.1*t;
 T=t+273.15;
-%h相对湿度，单位%
+% h is relative humidity in %
 h=h/100;
-%输入系数相
+% Input coefficients
 c1=-5674.5359;
 c2=6.3925247;
 c3=-0.9677843e-2
@@ -561,19 +561,20 @@ for i=1:L
         Pws(i)=exp(c8/T(i)+c9+c10*T(i)+c11*T(i)^2+c12*T(i)^3+c13*log(T(i)));
     end
     
-%Pws 逐时饱和水汽压  
-%Pv(i)=611.2*exp((18.678-t(i)/234.5)*t(i)/(t(i)+257.14));
+% Pws hourly saturation vapor pressure  
+% Pv(i)=611.2*exp((18.678-t(i)/234.5)*t(i)/(t(i)+257.14));
     Pw(i)=Pws(i).*h(i);
-%Pws逐时饱和水汽压 乘以 h逐时相对湿度是 Pw逐时水汽压
+% Pws (hourly saturation vapor pressure) times h (hourly relative humidity) is Pw (hourly vapor pressure)
+% Pw is hourly vapor pressure
     Ws(i)=0.62198*Pw(i)./(p(i)-Pw(i));
-%Ws逐时含湿量
+% Ws hourly specific humidity
 end
 Pws;
 Ws=Ws';
 Pw=Pw';
 useless2=[useless(:,1) useless(:,2) useless(:,3) useless(:,4) useless(:,5) useless(:,9) Ws ];
 a=useless2;
-fid=fopen('E:\论文\预测未来逐时天气\预测未来逐时天气\zhushihanshiliang.txt','wt');
+fid=fopen('zhushihanshiliang.txt','wt');
 [m,n]=size(a);
 for i=1:m
     for j=1:n
@@ -586,19 +587,19 @@ for i=1:m
 end
 fclose(fid);
 
-未来逐时含湿量
+% Future hourly specific humidity
 function futuress(data1,data2,data3)
-%求解含湿量尺度因子
-data1=load('E:\论文\预测未来逐时天气\预测未来逐时天气\zhushihanshiliang.txt');
-data2=load('E:\论文\预测未来逐时天气\预测未来逐时天气\FutureMonthlyData.txt');
-data3=load('E:\论文\预测未来逐时天气\预测未来逐时天气\FutureHourlydbt.txt');
+% Solve specific humidity scaling factors
+data1=load('zhushihanshiliang.txt');
+data2=load('FutureMonthlyData.txt');
+data3=load('FutureHourlydbt.txt');
 month=data1(:,3);
 day=data1(:,4);
 p=data1(:,6);
 s0=data1(:,7);
 HUSS1=data2(:,6);
-dbt=data3(:,6);%逐时预测干球温度，计算未来气候变化下的逐时饱和水汽压
-% p=0.1.*100.*p;%p为大气压力，单位为0.1百Pa，应标准化为Pa
+dbt=data3(:,6);% predicted hourly dry-bulb temperature, used to compute hourly saturation vapor pressure under future climate change
+% p=0.1.*100.*p;% p is atmospheric pressure in 0.1 hPa units; should be normalized to Pa
 F=length(s0);
 s0m=[];
 for k=1:1:12
@@ -609,13 +610,13 @@ for k=1:1:12
     end
     s0m=[s0m meanl];
 end
-s0m=s0m';%预测含湿量月均值
+s0m=s0m';% Predicted monthly mean specific humidity
 
 L=length(HUSS1);
 for i=1:1:L
-     as(i)=HUSS1(i)./s0m(i);%as(i)=1+(HUSS(i)/100);
+     as(i)=HUSS1(i)./s0m(i);% as(i)=1+(HUSS(i)/100);
 end
-%求出一年预测逐时含湿量
+% Compute predicted hourly specific humidity for one year
 for j=1:24*31
     s(j)=as(1)*s0(j);
 end
@@ -640,21 +641,22 @@ end
 for j=(24*(31+28+31+30+31+30+31)+1):(24*(31+28+31+30+31+30+31+31))
     s(j)=as(8)*s0(j);
 end
-未来逐时相对湿度 
+
+% Future hourly relative humidity 
 function futurerh(data1,data2,data3)
-%求解含湿量尺度因子
+% Solve specific humidity scaling factors
 clear
 clc
-data1=load('E:\论文\预测未来逐时天气\预测未来逐时天气\zhushihanshiliang.txt');
-data2=load('E:\论文\预测未来逐时天气\预测未来逐时天气\FutureMonthlyData.txt');
-data3=load('E:\论文\预测未来逐时天气\预测未来逐时天气\FutureHourlydbt.txt');
+data1=load('zhushihanshiliang.txt');
+data2=load('FutureMonthlyData.txt');
+data3=load('FutureHourlydbt.txt');
 month=data1(:,3);
 day=data1(:,4);
 p=data1(:,6);
 s0=data1(:,7);
 HUSS1=data2(:,6);
-dbt=data3(:,6);%逐时预测干球温度，计算未来气候变化下的逐时饱和水汽压
-% p=0.1.*100.*p;%p为大气压力，单位为0.1百Pa，应标准化为Pa
+dbt=data3(:,6);% predicted hourly dry-bulb temperature, used to compute hourly saturation vapor pressure under future climate change
+% p=0.1.*100.*p;% p is atmospheric pressure in 0.1 hPa units; should be normalized to Pa
 F=length(s0);
 s0m=[];
 for k=1:1:12
@@ -665,13 +667,13 @@ for k=1:1:12
     end
     s0m=[s0m meanl];
 end
-s0m=s0m';%预测含湿量月均值
+s0m=s0m';% Predicted monthly mean specific humidity
 
 L=length(HUSS1);
 for i=1:1:L
-     as(i)=HUSS1(i)./s0m(i);%as(i)=1+(HUSS(i)/100);
+     as(i)=HUSS1(i)./s0m(i);% as(i)=1+(HUSS(i)/100);
 end
-%求出一年预测逐时含湿量
+% Compute predicted hourly specific humidity for one year
 for j=1:24*31
     s(j)=as(1)*s0(j);
 end
@@ -708,13 +710,13 @@ end
 for j=(24*(31+28+31+30+31+30+31+31+30+31+30)+1):(24*(31+28+31+30+31+30+31+31+30+31+30+31))
     s(j)=as(12)*s0(j);
 end
-%转化成24时输出
-%s=s'*10000;
-%以下为计算逐时饱和水汽压
-%气温的单位为0.1摄氏度   %，标准化为国际温度单位
-%t=0.1*t;
+% Convert to 24-hour output
+% s=s'*10000;
+% Below computes hourly saturation vapor pressure
+% Air temperature unit is 0.1°C; normalize to Kelvin
+% t=0.1*t;
 T=dbt+273.15;
-%输入系数相
+% Input coefficients
 c1=-5674.5359;
 c2=6.3925247;
 c3=-0.9677843e-2;
@@ -737,17 +739,17 @@ for i=1:L
     end
 end
 Pws=Pws';
-%求解逐时水汽压
-%p=10*p;大气压的单位是？？
-%%%%%饱和压力
-%Pv(i)=611.2*exp((18.678-t(i)/234.5)*t(i)/(t(i)+257.14));
+% Solve hourly vapor pressure
+% p=10*p; atmospheric pressure unit??
+%%%%% saturation pressure
+% Pv(i)=611.2*exp((18.678-t(i)/234.5)*t(i)/(t(i)+257.14));
 %% Pw(i)=Pqb(i).*h(i);
-%%%%%饱和压力乘以相对湿度是水蒸气压力
+%%%%% saturation pressure times relative humidity is vapor pressure
 %%Ws(i)=0.62198*Pw(i)./(p(i)-Pw(i));
-%%%%%%含湿量
-%Pw=(s.*p)./(0.62198+s);
+%%%%%% specific humidity
+% Pw=(s.*p)./(0.62198+s);
 Pw=(s'.*p)./(0.62198+s');
-%求解相对湿度
+% Solve relative humidity
 h=Pw./Pws;
 L=length(h);
 for i=1:L
@@ -757,7 +759,7 @@ for i=1:L
 end
 h=h*100;
 k=1;
-%转化成24时输出
+% Convert to 24-hour output
 for i=1:1:F
     xxx(i)=k;
     k=k+1;
@@ -765,22 +767,23 @@ for i=1:1:F
         k=1;
     end
 end
-%24时，竖着输出fid是文件file的ID %6.1f 6代表小数点前有六位数，1代表小数点后有1位数，f代表自由格式输出
-% wt是write的简写
+% 24-hour, vertical output. fid is file ID. %6.1f: 6 digits before decimal, 1 digit after decimal, f = free format
+% 'wt' stands for write text
 xxx=xxx';
 s=s';
 % h=h';
-fid=fopen('E:\论文\预测未来逐时天气\预测未来逐时天气\FutureHourlyRH.txt','wt');
+fid=fopen('FutureHourlyRH.txt','wt');
 for i=1:1:F
     fprintf(fid, '%3.0f %6.1f\n',xxx(i),h(i));
 end
 fclose(fid);
-汇总数据
+
+% Aggregate data
 function zongshuju(data4,data5)
-data4=load('E:\论文\预测未来逐时天气\预测未来逐时天气\FutureHourlydbt.txt');
-data5=load('E:\论文\预测未来逐时天气\预测未来逐时天气\FutureHourlygsrdifdir.txt');
-data6=load('E:\论文\预测未来逐时天气\预测未来逐时天气\FutureHourlys.txt');
-data7=load('E:\论文\预测未来逐时天气\预测未来逐时天气\FutureHourlyRH.txt');
+data4=load('FutureHourlydbt.txt');
+data5=load('FutureHourlygsrdifdir.txt');
+data6=load('FutureHourlys.txt');
+data7=load('FutureHourlyRH.txt');
 dbt=data4(:,6);  
 dbt=dbt';
 dbt=reshape(dbt,24,365);
@@ -805,12 +808,12 @@ ss=data6(:,2);
 ss=ss';
 ss=reshape(ss,24,365);
 ss=ss';
-%气压：qiya 三次样条插值
-%干球温度：ganqiuwendu 三次样条插值
-%相对湿度：xiangduishidu 直线插值
-%风向：fengxiang 直线插值
-%风速：fengsu 直线插值
-%总云量：zongyunliang 直线插值
+% Pressure: qiya cubic spline interpolation
+% Dry-bulb temperature: ganqiuwendu cubic spline interpolation
+% Relative humidity: xiangduishidu linear interpolation
+% Wind direction: fengxiang linear interpolation
+% Wind speed: fengsu linear interpolation
+% Total cloudiness: zongyunliang linear interpolation
 for i=1:1:365
     j=(i-1)*24+1;
     year(i)=data4(j,2);
@@ -822,9 +825,9 @@ year=year';
 month=month';
 day=day';
 taizhanhao=taizhanhao';
-% 24时，横着输出 fid是文件file的ID %6.1f 6代表小数点前有六位数，1代表小数点后有1位数，f代表自由格式输出
-% wt是write的简写
-fid=fopen('E:\论文\预测未来逐时天气\预测未来逐时天气\zongshuju.txt','wt');
+% 24-hour, horizontal output. fid is file ID. %6.1f: 6 digits before decimal, 1 digit after decimal, f = free format
+% 'wt' stands for write text
+fid=fopen('zongshuju.txt','wt');
 
 for i=1:1:365
     fprintf(fid,'%3.0f %3.0f %3.0f %3.0f dbt %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f\n',year(i),month(i),day(i),taizhanhao(i),dbt(i,:));
